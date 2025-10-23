@@ -1,107 +1,83 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <style>
-    #qrcode { position: relative; }
-    #qrcode img.icon {
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 25%; height: 25%;
-      transform: translate(-50%, -50%);
-      border-radius: 6px;
-    }
-  </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-6">
-  <h1 class="text-3xl font-bold mb-6">QR Generator</h1>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+  <div class="p-8 bg-gray-800 shadow-xl flex flex-col items-center w-96">
+    <h1 class="text-3xl font-bold mb-4">QR Generator</h1>
 
-  <div class="w-full max-w-sm flex flex-col gap-3">
-    <input id="text" type="text" placeholder="🔗 Inserisci testo o URL" class="p-3 text-black rounded" />
+    <input id="text" type="text" placeholder="Testo o URL"
+      class="p-3 w-full text-black mb-3 outline-none rounded-none" />
 
-    <div class="flex gap-2">
-      <div class="flex flex-col flex-1">
-        <label class="text-sm">Colore</label>
-        <input id="color" type="color" value="#000000" class="cursor-pointer rounded">
-      </div>
-      <div class="flex flex-col flex-1">
-        <label class="text-sm">Sfondo</label>
-        <input id="bg" type="color" value="#ffffff" class="cursor-pointer rounded">
-      </div>
-    </div>
+    <input id="color" type="color" value="#000000" class="mb-3 w-full" title="Colore QR" />
+    <input id="bgcolor" type="color" value="#ffffff" class="mb-3 w-full" title="Sfondo QR" />
+    <input id="iconUrl" type="text" placeholder="URL icona al centro (opzionale)"
+      class="p-3 w-full text-black mb-3 outline-none rounded-none" />
 
-    <input id="icon" type="url" placeholder="🖼️ URL icona (opzionale)" class="p-3 text-black rounded" />
+    <div class="g-recaptcha mb-3" data-sitekey="6LeSn_QrAAAAAN8MyhZIdE93WqG6BS70jwzXawVe" data-callback="enableButton"></div>
 
-    <div class="flex gap-2 mt-2">
-      <button onclick="generateQR()" class="bg-blue-600 hover:bg-blue-700 flex-1 px-4 py-2 rounded font-semibold">
-        Genera
-      </button>
-      <button id="downloadBtn" onclick="downloadQR()" disabled class="bg-green-600 opacity-50 px-4 py-2 rounded font-semibold">
-        Scarica
-      </button>
-    </div>
+    <button id="generateBtn" onclick="generateQR()" class="bg-blue-600 px-4 py-2 w-full font-semibold disabled:opacity-50" disabled>Genera</button>
+
+    <div id="qrcode" class="mt-6"></div>
+
+    <a id="downloadLink" href="#" download="qrcode.png"
+       class="hidden bg-green-600 hover:bg-green-700 mt-4 px-4 py-2 font-semibold">Download QR</a>
   </div>
 
-  <div id="qrcode" class="mt-6"></div>
-
   <script>
-    function sanitizeURL(url) {
-      try {
-        new URL(url);
-        return url;
-      } catch {
-        return url;
-      }
+    let qr;
+
+    function enableButton() {
+      document.getElementById("generateBtn").disabled = false;
     }
 
     function generateQR() {
       const text = document.getElementById("text").value.trim();
       const color = document.getElementById("color").value;
-      const bg = document.getElementById("bg").value;
-      const iconUrl = document.getElementById("icon").value.trim();
+      const bgColor = document.getElementById("bgcolor").value;
+      const iconUrl = document.getElementById("iconUrl").value.trim();
       const qrDiv = document.getElementById("qrcode");
-      const downloadBtn = document.getElementById("downloadBtn");
-
       qrDiv.innerHTML = "";
-      downloadBtn.disabled = true;
-      downloadBtn.classList.add("opacity-50");
 
-      if (!text) return alert("Inserisci un testo o un URL!");
+      if (!text) return;
 
-      const qr = new QRCode(qrDiv, {
-        text: sanitizeURL(text),
+      qr = new QRCode(qrDiv, {
+        text,
         width: 200,
         height: 200,
         colorDark: color,
-        colorLight: bg,
+        colorLight: bgColor,
         correctLevel: QRCode.CorrectLevel.H
       });
 
-      // Delay per permettere al canvas di generarsi
       setTimeout(() => {
+        const canvas = qrDiv.querySelector("canvas");
         if (iconUrl) {
-          const icon = document.createElement("img");
-          icon.src = sanitizeURL(iconUrl);
-          icon.className = "icon";
-          icon.referrerPolicy = "no-referrer";
-          qrDiv.appendChild(icon);
+          const ctx = canvas.getContext("2d");
+          const icon = new Image();
+          icon.crossOrigin = "anonymous";
+          icon.src = iconUrl;
+          icon.onload = () => {
+            const size = canvas.width * 0.25;
+            ctx.drawImage(icon, (canvas.width - size) / 2, (canvas.height - size) / 2, size, size);
+            showDownload(canvas);
+          };
+        } else {
+          showDownload(canvas);
         }
-        downloadBtn.disabled = false;
-        downloadBtn.classList.remove("opacity-50");
       }, 300);
     }
 
-    function downloadQR() {
-      const canvas = document.querySelector("#qrcode canvas");
-      if (!canvas) return;
-      const link = document.createElement("a");
-      link.download = "qr_code.png";
+    function showDownload(canvas) {
+      const link = document.getElementById("downloadLink");
       link.href = canvas.toDataURL("image/png");
-      link.click();
+      link.classList.remove("hidden");
     }
   </script>
 </body>
