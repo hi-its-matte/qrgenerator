@@ -3,85 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QR Generator Pro</title>
+  <title>QR Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    #qrcode canvas {
-      border-radius: var(--qr-border-radius, 0);
-    }
+    #qrcode { position: relative; }
     #qrcode img.icon {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 25%;
-      height: 25%;
+      top: 50%; left: 50%;
+      width: 25%; height: 25%;
       transform: translate(-50%, -50%);
-      border-radius: 8px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-6">
-  <h1 class="text-3xl font-bold mb-6">✨ QR Generator Pro</h1>
+  <h1 class="text-3xl font-bold mb-6">QR Generator</h1>
 
-  <div class="flex flex-col gap-3 w-full max-w-sm">
+  <div class="w-full max-w-sm flex flex-col gap-3">
     <input id="text" type="text" placeholder="🔗 Inserisci testo o URL" class="p-3 text-black rounded" />
-    
+
     <div class="flex gap-2">
       <div class="flex flex-col flex-1">
-        <label class="text-sm">Colore QR</label>
-        <input id="color" type="color" value="#000000" class="rounded cursor-pointer">
+        <label class="text-sm">Colore</label>
+        <input id="color" type="color" value="#000000" class="cursor-pointer rounded">
       </div>
       <div class="flex flex-col flex-1">
         <label class="text-sm">Sfondo</label>
-        <input id="bgcolor" type="color" value="#ffffff" class="rounded cursor-pointer">
+        <input id="bg" type="color" value="#ffffff" class="cursor-pointer rounded">
       </div>
     </div>
 
-    <div class="flex flex-col">
-      <label class="text-sm">Raggio angoli</label>
-      <input id="radius" type="range" min="0" max="50" value="0" class="cursor-pointer">
+    <input id="icon" type="url" placeholder="🖼️ URL icona (opzionale)" class="p-3 text-black rounded" />
+
+    <div class="flex gap-2 mt-2">
+      <button onclick="generateQR()" class="bg-blue-600 hover:bg-blue-700 flex-1 px-4 py-2 rounded font-semibold">
+        Genera
+      </button>
+      <button id="downloadBtn" onclick="downloadQR()" disabled class="bg-green-600 opacity-50 px-4 py-2 rounded font-semibold">
+        Scarica
+      </button>
     </div>
-
-    <input id="icon" type="url" placeholder="📷 URL icona (opzionale)" class="p-3 text-black rounded" />
-
-    <button onclick="generateQR()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold mt-2">
-      Genera QR
-    </button>
   </div>
 
-  <div id="qrcode" class="relative mt-6"></div>
+  <div id="qrcode" class="mt-6"></div>
 
   <script>
+    function sanitizeURL(url) {
+      try {
+        new URL(url);
+        return url;
+      } catch {
+        return url;
+      }
+    }
+
     function generateQR() {
       const text = document.getElementById("text").value.trim();
       const color = document.getElementById("color").value;
-      const bgColor = document.getElementById("bgcolor").value;
-      const radius = document.getElementById("radius").value;
+      const bg = document.getElementById("bg").value;
       const iconUrl = document.getElementById("icon").value.trim();
       const qrDiv = document.getElementById("qrcode");
+      const downloadBtn = document.getElementById("downloadBtn");
 
-      qrDiv.innerHTML = ""; // reset
-      qrDiv.style.setProperty("--qr-border-radius", radius + "%");
+      qrDiv.innerHTML = "";
+      downloadBtn.disabled = true;
+      downloadBtn.classList.add("opacity-50");
 
       if (!text) return alert("Inserisci un testo o un URL!");
 
       const qr = new QRCode(qrDiv, {
-        text,
+        text: sanitizeURL(text),
         width: 200,
         height: 200,
         colorDark: color,
-        colorLight: bgColor,
+        colorLight: bg,
         correctLevel: QRCode.CorrectLevel.H
       });
 
-      // Aggiungi icona al centro
-      if (iconUrl) {
-        const icon = document.createElement("img");
-        icon.src = iconUrl;
-        icon.className = "icon";
-        qrDiv.appendChild(icon);
-      }
+      // Delay per permettere al canvas di generarsi
+      setTimeout(() => {
+        if (iconUrl) {
+          const icon = document.createElement("img");
+          icon.src = sanitizeURL(iconUrl);
+          icon.className = "icon";
+          icon.referrerPolicy = "no-referrer";
+          qrDiv.appendChild(icon);
+        }
+        downloadBtn.disabled = false;
+        downloadBtn.classList.remove("opacity-50");
+      }, 300);
+    }
+
+    function downloadQR() {
+      const canvas = document.querySelector("#qrcode canvas");
+      if (!canvas) return;
+      const link = document.createElement("a");
+      link.download = "qr_code.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
     }
   </script>
 </body>
