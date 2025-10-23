@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
@@ -20,22 +19,34 @@
     <input id="iconUrl" type="text" placeholder="URL icona al centro (opzionale)"
       class="p-3 w-full text-black mb-3 outline-none rounded-none" />
 
-    <div class="g-recaptcha mb-3" data-sitekey="6LeSn_QrAAAAAN8MyhZIdE93WqG6BS70jwzXawVe" data-callback="enableButton"></div>
-
-    <button id="generateBtn" onclick="generateQR()" class="bg-blue-600 px-4 py-2 w-full font-semibold disabled:opacity-50" disabled>Genera</button>
+    <button id="generateBtn" onclick="generateQR()" class="bg-blue-600 px-4 py-2 w-full font-semibold">Genera</button>
 
     <div id="qrcode" class="mt-6"></div>
 
     <a id="downloadLink" href="#" download="qrcode.png"
        class="hidden bg-green-600 hover:bg-green-700 mt-4 px-4 py-2 font-semibold">Download QR</a>
+
+    <!-- Link Privacy e Terms -->
+    <div class="mt-6 text-center text-gray-400 text-sm">
+      <a href="#privacy" class="underline hover:text-white mx-2">Privacy Policy</a> |
+      <a href="#terms" class="underline hover:text-white mx-2">Terms of Service</a>
+    </div>
+
+    <!-- Privacy e Terms nel footer della stessa pagina -->
+    <div id="privacy" class="mt-8 text-gray-300 text-sm">
+      <h2 class="text-xl font-bold mb-2">Privacy Policy</h2>
+      <p>Tutti i dati inseriti dall'utente vengono elaborati **solo nel browser**. Non salviamo né condividiamo alcuna informazione. L'unico dato che potrebbe essere caricato da terze parti è l'icona centrale se proviene da un URL esterno.</p>
+    </div>
+
+    <div id="terms" class="mt-8 text-gray-300 text-sm">
+      <h2 class="text-xl font-bold mb-2">Terms of Service</h2>
+      <p>Utilizzando questo generatore QR accetti che i QR creati siano generati **solo sul tuo dispositivo**. Non siamo responsabili per l'uso dei QR generati né per contenuti esterni inseriti tramite URL icona.</p>
+    </div>
+
   </div>
 
   <script>
     let qr;
-
-    function enableButton() {
-      document.getElementById("generateBtn").disabled = false;
-    }
 
     function generateQR() {
       const text = document.getElementById("text").value.trim();
